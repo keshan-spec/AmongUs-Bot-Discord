@@ -1,0 +1,17 @@
+{
+  "name": "AU",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "nodemon ./dist/index.js",
+    "start": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^14.14.3",
+    "discord.js": "^12.4.1",
+    "dotenv": "^8.2.0"
+  }
+}
