@@ -52,6 +52,9 @@ export class DiscordBot {
         if (command == "help") {
             await message.reply("Commands .. im lazy man")
         }
+        if (command == "invite") {
+            await message.reply("https://discord.com/api/oauth2/authorize?client_id=770288825091620864&permissions=8&scope=bot")
+        }
 
         if (command === "begin" && this.begin != true) { // start game
             const voice = message.member?.voice.channel
