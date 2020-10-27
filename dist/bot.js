@@ -33,7 +33,7 @@ class DiscordBot {
         this.client.on('ready', () => {
             var _a, _b;
             console.log(`Logged in as ${(_a = this.client.user) === null || _a === void 0 ? void 0 : _a.tag}!`);
-            (_b = this.client.user) === null || _b === void 0 ? void 0 : _b.setActivity(`In ${this.client.guilds.cache.size} servers : auhelp`, { type: "PLAYING" }).then(presence => console.log(`Activity set to ${presence.activities[0].name}`)).catch(err => console.error(err));
+            (_b = this.client.user) === null || _b === void 0 ? void 0 : _b.setActivity(`In ${this.client.guilds.cache.size} servers | auhelp`, { type: "PLAYING" }).then(presence => console.log(`Activity set to ${presence.activities[0].name}`)).catch(err => console.error(err));
         });
     }
     ;
