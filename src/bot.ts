@@ -1,11 +1,17 @@
 import { Client, Message, VoiceChannel } from 'discord.js';
 
+type instances = {
+    boundchannel?: VoiceChannel | null,
+    begin?: boolean,
+    deadPlayers: string[]
+}
+
 export class DiscordBot {
     private static instance: DiscordBot;
     private PREFIX = "au";
-    private begin = false;
-    private deadPlayers: string[] = [];
-    private boundChannel: VoiceChannel;
+    private invite = "https://discord.com/api/oauth2/authorize?client_id=770288825091620864&permissions=8&scope=bot";
+    private occupiedInstances = new Map() // Map<string, instances>;
+
 
     private client: Client = new Client({ partials: ["MESSAGE", "REACTION"] });
 
@@ -39,6 +45,7 @@ export class DiscordBot {
     private setReadyHandler(): void {
         this.client.on('ready', () => {
             console.log(`Logged in as ${this.client.user?.tag}!`);
+            // this.client.guilds.cache.forEach((server) => { console.log(server.id, server.name) })
         });
     };
 
@@ -52,79 +59,98 @@ export class DiscordBot {
         if (command == "help") {
             await message.reply("Commands .. im lazy man")
         }
-        if (command == "invite") {
-            await message.reply("https://discord.com/api/oauth2/authorize?client_id=770288825091620864&permissions=8&scope=bot")
-        }
+        if (command == "invite") await message.reply(this.invite)
 
-        if (command === "begin" && this.begin != true) { // start game
+        if (command === "begin") { // start game
             const voice = message.member?.voice.channel
+            const user = message.author.id
+
+            if (this.occupiedInstances.get(user)) {
+                return
+            }
+
             if (voice) {
-                this.boundChannel = voice
-                this.boundAuthor = message.author.id
+                let instance: instances = {
+                    boundchannel: voice,
+                    deadPlayers: []
+                }
+
+                this.occupiedInstances.set(user, instance) // create a new user instance 
+
                 await message.reply("Starting game, Bound to channel")
-                this.begin = true
                 return
             }
             await message.reply("Please connect to a voice channel")
         }
-        // return if there is no current game runnning
-        if (this.begin != true) return
 
         if (command === "muteall") { // muteall members
-            for (const [_, member] of this.boundChannel.members) {
-                member.voice.setMute(true)
-                    .then(_ => console.log(`Muted ${member.user.tag}`))
-                    .catch((err) => console.error(err))
+            let instance = this.occupiedInstances.get(message.author.id)
+            if (instance) {
+                for (const [_, member] of instance.boundchannel.members) {
+                    member.voice.setMute(true)
+                        .then(_ => console.log(`Muted ${member.user.tag}`))
+                        .catch((err) => console.error(err))
+                }
             }
         }
-        if (command === "meeting") { // muteall members
-            for (const [_, member] of this.boundChannel.members) {
-                if (this.deadPlayers.includes(member.id)) continue
-                member.voice.setMute(false)
-                    .then(_ => console.log(`Unmuted ${member.user.tag}`))
-                    .catch((err) => console.error(err))
+        if (command === "meeting") { // unmuteall members
+            let instance = this.occupiedInstances.get(message.author.id)
+            if (instance) {
+                for (const [_, member] of instance.boundchannel.members) {
+                    if (instance.deadPlayers.includes(member.id)) continue
+                    member.voice.setMute(false)
+                        .then(_ => console.log(`Unmuted ${member.user.tag}`))
+                        .catch((err) => console.error(err))
+                }
             }
         }
         if (command === "dead") { // mute one member
-            if (args[0]) {
-                let mention = message.mentions.members?.first()
-                if (mention) {
-                    this.deadPlayers.push(mention.user.id)
-                    for (const [_, member] of this.boundChannel.members) {
-                        if (mention?.user.id === member.id) {
-                            member.voice.setMute(true)
-                                .then(_ => console.log(`Muted ${member.user.tag}`))
-                                .catch((err) => console.error(err))
+            let instance = this.occupiedInstances.get(message.author.id)
+            if (instance) {
+                if (args[0]) {
+                    let mention = message.mentions.members?.first()
+                    if (mention) {
+                        instance.deadPlayers.push(mention.user.id)
+                        for (const [_, member] of instance.boundchannel.members) {
+                            if (mention?.user.id === member.id) {
+                                member.voice.setMute(true)
+                                    .then(_ => console.log(`Muted ${member.user.tag}`))
+                                    .catch((err) => console.error(err))
+                            }
                         }
                     }
+                } else {
+                    await message.reply("Command requires a user mention")
                 }
-            } else {
-                await message.reply("Command requires a user mention")
+            }
+        }
+        if (command === "re") { // reset game variables
+            let instance = this.occupiedInstances.get(message.author.id)
+            if (instance) {
+                instance.deadPlayers = []
+                for (const [_, member] of instance.boundchannel.members) {
+                    member.voice.setMute(false)
+                        .then(_ => console.log(`Unmuted ${member.user.tag}`))
+                        .catch((err) => console.error(err))
+                }
+                await message.reply("Nice lets start again")
+            }
+        }
+        if (command === "close") { // reset game 
+            let instance = this.occupiedInstances.get(message.author.id)
+            if (instance) {
+                // unmute and disconnect everyone
+                for (const [_, member] of instance.boundchannel.members) {
+                    member.voice.setMute(false)
+                        .then(_ => console.log(`Unmuted ${member.user.tag}`))
+                        .catch((err) => console.error(err))
+                    member.voice.kick()
+                }
+                // remove instance
+                this.occupiedInstances.delete(message.author.id)
+                await message.reply("Nice playing, Bye!!")
             }
 
-        }
-        if (command === "re" && this.begin) { // reset game variables
-            this.deadPlayers = []
-            for (const [_, member] of this.boundChannel.members) {
-                member.voice.setMute(false)
-                    .then(_ => console.log(`Unmuted ${member.user.tag}`))
-                    .catch((err) => console.error(err))
-            }
-            await message.reply("Nice lets start again")
-        }
-        if (command === "close" && this.begin) { // reset game 
-            // unmute and disconnect everyone
-            for (const [_, member] of this.boundChannel.members) {
-                member.voice.setMute(false)
-                    .then(_ => console.log(`Unmuted ${member.user.tag}`))
-                    .catch((err) => console.error(err))
-                member.voice.kick()
-            }
-
-            // reset variables
-            this.boundChannel = null
-            this.begin = false
-            await message.reply("Nice playing, Bye!!")
         }
         return
     }
@@ -139,12 +165,10 @@ export class DiscordBot {
 
     private setVoiceHandler(): void {
         this.client.on("voiceStateUpdate", (oldVoiceState, newVoiceState) => { // Listeing to the voiceStateUpdate event
-            if (this.begin) {
-                if (newVoiceState.channel?.id == this.boundChannel.id) // The member connected to a channel.
-                    console.log(`${newVoiceState.member?.user.tag} connected to ${newVoiceState.channel?.name}.`);
-                else if (oldVoiceState.channel?.id == this.boundChannel.id)  // The member disconnected from a channel.
-                    console.log(`${oldVoiceState.member?.user.tag} disconnected from ${oldVoiceState.channel?.name}.`)
-            }
+            if (newVoiceState.channel?.id) // The member connected to a channel.
+                console.log(`${newVoiceState.member?.user.tag} connected to ${newVoiceState.channel?.name}.`);
+            else if (oldVoiceState.channel?.id)  // The member disconnected from a channel.
+                console.log(`${oldVoiceState.member?.user.tag} disconnected from ${oldVoiceState.channel?.name}.`)
         });
     }
 }
