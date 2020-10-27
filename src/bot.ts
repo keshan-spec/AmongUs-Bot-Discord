@@ -49,6 +49,16 @@ export class DiscordBot {
         });
     };
 
+    private getChannelBound(voice_id: string): boolean {
+        var temp = true
+        this.occupiedInstances.forEach((v, k) => {
+            if (v.boundchannel.id === voice_id) {
+                temp = false
+            }
+        })
+        return temp
+    }
+
     private async commandHandler(message: Message) {
         let command: any, args: any;
         [command, ...args] = message.content
@@ -65,18 +75,19 @@ export class DiscordBot {
             const voice = message.member?.voice.channel
             const user = message.author.id
 
-            if (this.occupiedInstances.get(user)) {
-                return
-            }
+            if (this.occupiedInstances.get(user)) return // prevent user from starting without closing a game
 
             if (voice) {
-                let instance: instances = {
-                    boundchannel: voice,
-                    deadPlayers: []
+                if (this.getChannelBound(voice.id) == false) { // check if a user is already bound to the voice channel
+                    await message.reply("This channel is already occupied")
+                    return
+                }
+                let instance: instances = { // create new instance
+                    boundchannel: voice, // Voice channel
+                    deadPlayers: [] // dead players in a match
                 }
 
                 this.occupiedInstances.set(user, instance) // create a new user instance 
-
                 await message.reply("Starting game, Bound to channel")
                 return
             }
