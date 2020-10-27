@@ -10,7 +10,6 @@ export class DiscordBot {
     private static instance: DiscordBot;
     private PREFIX = "au";
     private invite = "https://discord.com/api/oauth2/authorize?client_id=770288825091620864&permissions=8&scope=bot";
-    private help_details = "Commands help"
     private occupiedInstances = new Map() // Map<string, instances>;
 
 
@@ -60,12 +59,18 @@ export class DiscordBot {
         return temp
     }
 
-    private async getEmbed(message: Message, description: string, title: string, color?: string) { // embed message
-        await message.reply(new MessageEmbed()
-            .setColor("#30afe3")
-            .setTitle(title)
-            .setDescription(description)
-        )
+    private async helpEmbed(message: Message) { // embed message
+        let embed = new MessageEmbed()
+        embed.setColor(13378082)
+        embed.setDescription("**Bot Prefix** : au\n\nThe following are the commands without the prefix")
+        embed.addField("begin", "Run this command once you've joined a voice channel to bound the bot to that channel")
+        embed.addField("muteall", "This command is used to muteall players during the game")
+        embed.addField("meeting", "This command is used when meetings are called ingame. Unmutes all players")
+        embed.addField("dead <mention user>", "This command is used to mark a *mentioned* user as dead, and will remain muted during meetings ")
+        embed.addField("help", "This command is used to mark a *mentioned* user as dead, and will remain muted during meetings ")
+        embed.addField("invite", "Provides an invite url for the bot")
+
+        await message.channel.send(embed)
     }
 
     private async commandHandler(message: Message) { // handles all commands for the bot
@@ -75,8 +80,14 @@ export class DiscordBot {
             .substring(this.PREFIX.length)
             .split(/\s+/)
 
-        if (command === "help") this.getEmbed(message, this.help_details, "Help") // helper command
-        if (command === "invite") this.getEmbed(message, this.invite, "Use this link to invite this bot to your server!") // invite command
+        if (command === "help") this.helpEmbed(message) // helper command
+        if (command === "invite") { // invite command
+            await message.channel.send(new MessageEmbed()
+                .setColor("#30afe3")
+                .setTitle("Use this link to invite this bot to your server!")
+                .setDescription(this.invite)
+            )
+        }
 
 
         if (command === "begin") { // start game

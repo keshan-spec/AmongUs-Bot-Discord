@@ -6,7 +6,6 @@ class DiscordBot {
     constructor() {
         this.PREFIX = "au";
         this.invite = "https://discord.com/api/oauth2/authorize?client_id=770288825091620864&permissions=8&scope=bot";
-        this.help_details = "Commands help";
         this.occupiedInstances = new Map(); // Map<string, instances>;
         this.client = new discord_js_1.Client({ partials: ["MESSAGE", "REACTION"] });
         this.initializeCient();
@@ -47,11 +46,17 @@ class DiscordBot {
         });
         return temp;
     }
-    async getEmbed(message, description, title, color) {
-        await message.reply(new discord_js_1.MessageEmbed()
-            .setColor("#30afe3")
-            .setTitle(title)
-            .setDescription(description));
+    async helpEmbed(message) {
+        let embed = new discord_js_1.MessageEmbed();
+        embed.setColor(13378082);
+        embed.setDescription("**Bot Prefix** : au\n\nThe following are the commands without the prefix");
+        embed.addField("begin", "Run this command once you've joined a voice channel to bound the bot to that channel");
+        embed.addField("muteall", "This command is used to muteall players during the game");
+        embed.addField("meeting", "This command is used when meetings are called ingame. Unmutes all players");
+        embed.addField("dead <mention user>", "This command is used to mark a *mentioned* user as dead, and will remain muted during meetings ");
+        embed.addField("help", "This command is used to mark a *mentioned* user as dead, and will remain muted during meetings ");
+        embed.addField("invite", "Provides an invite url for the bot");
+        await message.channel.send(embed);
     }
     async commandHandler(message) {
         var _a, _b;
@@ -61,9 +66,13 @@ class DiscordBot {
             .substring(this.PREFIX.length)
             .split(/\s+/);
         if (command === "help")
-            this.getEmbed(message, this.help_details, "Help"); // helper command
-        if (command === "invite")
-            this.getEmbed(message, this.invite, "Use this link to invite this bot to your server!"); // invite command
+            this.helpEmbed(message); // helper command
+        if (command === "invite") { // invite command
+            await message.channel.send(new discord_js_1.MessageEmbed()
+                .setColor("#30afe3")
+                .setTitle("Use this link to invite this bot to your server!")
+                .setDescription(this.invite));
+        }
         if (command === "begin") { // start game
             const voice = (_a = message.member) === null || _a === void 0 ? void 0 : _a.voice.channel;
             const user = message.author.id;
