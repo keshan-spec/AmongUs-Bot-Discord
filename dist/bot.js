@@ -54,6 +54,7 @@ class DiscordBot {
         embed.addField("muteall", "This command is used to muteall players during the game");
         embed.addField("meeting", "This command is used when meetings are called ingame. Unmutes all players");
         embed.addField("dead <mention user>", "This command is used to mark a *mentioned* user as dead, and will remain muted during meetings ");
+        embed.addField("re", "Use this command when you start a new game/round");
         embed.addField("help", "This command is used to mark a *mentioned* user as dead, and will remain muted during meetings ");
         embed.addField("invite", "Provides an invite url for the bot");
         await message.channel.send(embed);
