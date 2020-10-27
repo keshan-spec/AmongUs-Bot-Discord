@@ -48,7 +48,7 @@ export class DiscordBot {
             console.log(`Logged in as ${this.client.user?.tag}!`);
             this.client.user?.setActivity(`In ${this.client.guilds.cache.size} servers : auhelp`, { type: "PLAYING" })
                 .then(presence => console.log(`Activity set to ${presence.activities[0].name}`))
-                .catch(console.error);
+                .catch(err => console.error(err));
 
         });
     };
