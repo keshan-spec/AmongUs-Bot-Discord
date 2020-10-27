@@ -1,4 +1,5 @@
 import { Client, Message, VoiceChannel, MessageEmbed } from 'discord.js';
+import { type } from 'os';
 
 type instances = {
     boundchannel?: VoiceChannel | null,
@@ -45,7 +46,10 @@ export class DiscordBot {
     private setReadyHandler(): void {
         this.client.on('ready', () => {
             console.log(`Logged in as ${this.client.user?.tag}!`);
-            // this.client.guilds.cache.forEach((server) => { console.log(server.id, server.name) })
+            this.client.user?.setActivity(`In ${this.client.guilds.cache.size} servers : auhelp`, { type: "PLAYING" })
+                .then(presence => console.log(`Activity set to ${presence.activities[0].name}`))
+                .catch(console.error);
+
         });
     };
 
