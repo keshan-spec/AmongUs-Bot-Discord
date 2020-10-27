@@ -1,4 +1,4 @@
-import { Client, Message, VoiceChannel } from 'discord.js';
+import { Client, Message, VoiceChannel, MessageEmbed } from 'discord.js';
 
 type instances = {
     boundchannel?: VoiceChannel | null,
@@ -10,6 +10,7 @@ export class DiscordBot {
     private static instance: DiscordBot;
     private PREFIX = "au";
     private invite = "https://discord.com/api/oauth2/authorize?client_id=770288825091620864&permissions=8&scope=bot";
+    private help_details = "Commands help"
     private occupiedInstances = new Map() // Map<string, instances>;
 
 
@@ -49,7 +50,7 @@ export class DiscordBot {
         });
     };
 
-    private getChannelBound(voice_id: string): boolean {
+    private getChannelBound(voice_id: string): boolean { // check if a channel is already occupied
         var temp = true
         this.occupiedInstances.forEach((v, k) => {
             if (v.boundchannel.id === voice_id) {
@@ -59,17 +60,24 @@ export class DiscordBot {
         return temp
     }
 
-    private async commandHandler(message: Message) {
+    private async getEmbed(message: Message, description: string, title: string, color?: string) { // embed message
+        await message.reply(new MessageEmbed()
+            .setColor("#30afe3")
+            .setTitle(title)
+            .setDescription(description)
+        )
+    }
+
+    private async commandHandler(message: Message) { // handles all commands for the bot
         let command: any, args: any;
         [command, ...args] = message.content
             .trim()
             .substring(this.PREFIX.length)
             .split(/\s+/)
 
-        if (command == "help") {
-            await message.reply("Commands .. im lazy man")
-        }
-        if (command == "invite") await message.reply(this.invite)
+        if (command === "help") this.getEmbed(message, this.help_details, "Help") // helper command
+        if (command === "invite") this.getEmbed(message, this.invite, "Use this link to invite this bot to your server!") // invite command
+
 
         if (command === "begin") { // start game
             const voice = message.member?.voice.channel
@@ -94,75 +102,69 @@ export class DiscordBot {
             await message.reply("Please connect to a voice channel")
         }
 
+        // the following commands are run after the instance is created
+        // therefore this statement will act as a clause
+        let instance = this.occupiedInstances.get(message.author.id)
+        if (instance == null) return
+
         if (command === "muteall") { // muteall members
-            let instance = this.occupiedInstances.get(message.author.id)
-            if (instance) {
-                for (const [_, member] of instance.boundchannel.members) {
-                    member.voice.setMute(true)
-                        .then(_ => console.log(`Muted ${member.user.tag}`))
-                        .catch((err) => console.error(err))
-                }
+            for (const [_, member] of instance.boundchannel.members) {
+                member.voice.setMute(true)
+                    .then(_ => console.log(`Muted ${member.user.tag}`))
+                    .catch((err) => console.error(err))
             }
         }
+
         if (command === "meeting") { // unmuteall members
-            let instance = this.occupiedInstances.get(message.author.id)
-            if (instance) {
-                for (const [_, member] of instance.boundchannel.members) {
-                    if (instance.deadPlayers.includes(member.id)) continue
-                    member.voice.setMute(false)
-                        .then(_ => console.log(`Unmuted ${member.user.tag}`))
-                        .catch((err) => console.error(err))
-                }
+            for (const [_, member] of instance.boundchannel.members) {
+                if (instance.deadPlayers.includes(member.id)) continue // if the player is dead then keep them muted
+                member.voice.setMute(false)
+                    .then(_ => console.log(`Unmuted ${member.user.tag}`))
+                    .catch((err) => console.error(err))
             }
         }
+
         if (command === "dead") { // mute one member
-            let instance = this.occupiedInstances.get(message.author.id)
-            if (instance) {
-                if (args[0]) {
-                    let mention = message.mentions.members?.first()
-                    if (mention) {
-                        instance.deadPlayers.push(mention.user.id)
-                        for (const [_, member] of instance.boundchannel.members) {
-                            if (mention?.user.id === member.id) {
-                                member.voice.setMute(true)
-                                    .then(_ => console.log(`Muted ${member.user.tag}`))
-                                    .catch((err) => console.error(err))
-                            }
+            if (args[0]) {
+                let mention = message.mentions.members?.first()
+                if (mention) {
+                    instance.deadPlayers.push(mention.user.id) // add a dead player
+                    for (const [_, member] of instance.boundchannel.members) {
+                        if (mention?.user.id === member.id) {
+                            member.voice.setMute(true)
+                                .then(_ => console.log(`Muted ${member.user.tag}`))
+                                .catch((err) => console.error(err))
                         }
                     }
-                } else {
-                    await message.reply("Command requires a user mention")
                 }
+            } else {
+                await message.reply("Command requires a user mention")
             }
         }
-        if (command === "re") { // reset game variables
-            let instance = this.occupiedInstances.get(message.author.id)
-            if (instance) {
-                instance.deadPlayers = []
-                for (const [_, member] of instance.boundchannel.members) {
-                    member.voice.setMute(false)
-                        .then(_ => console.log(`Unmuted ${member.user.tag}`))
-                        .catch((err) => console.error(err))
-                }
-                await message.reply("Nice lets start again")
-            }
-        }
-        if (command === "close") { // reset game 
-            let instance = this.occupiedInstances.get(message.author.id)
-            if (instance) {
-                // unmute and disconnect everyone
-                for (const [_, member] of instance.boundchannel.members) {
-                    member.voice.setMute(false)
-                        .then(_ => console.log(`Unmuted ${member.user.tag}`))
-                        .catch((err) => console.error(err))
-                    member.voice.kick()
-                }
-                // remove instance
-                this.occupiedInstances.delete(message.author.id)
-                await message.reply("Nice playing, Bye!!")
-            }
 
+        if (command === "re") { // reset game variables
+            instance.deadPlayers = []
+            for (const [_, member] of instance.boundchannel.members) {
+                member.voice.setMute(false)
+                    .then(_ => console.log(`Unmuted ${member.user.tag}`))
+                    .catch((err) => console.error(err))
+            }
+            await message.reply("Nice lets start again")
         }
+
+        if (command === "close") { // reset game 
+            // unmute and disconnect everyone
+            for (const [_, member] of instance.boundchannel.members) {
+                member.voice.setMute(false)
+                    .then(_ => console.log(`Unmuted ${member.user.tag}`))
+                    .catch((err) => console.error(err))
+                member.voice.kick()
+            }
+            // remove instance
+            this.occupiedInstances.delete(message.author.id)
+            await message.reply("Nice playing, Bye!!")
+        }
+
         return
     }
 
