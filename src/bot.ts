@@ -1,5 +1,4 @@
 import { Client, Message, VoiceChannel, MessageEmbed } from 'discord.js';
-import { type } from 'os';
 
 type instances = {
     boundchannel: VoiceChannel,
@@ -11,7 +10,7 @@ export class DiscordBot {
     private static instance: DiscordBot;
     private PREFIX = "au";
     private invite = "https://discord.com/api/oauth2/authorize?client_id=770288825091620864&permissions=8&scope=bot";
-    private occupiedInstances: Map<string, instances> = new Map() // Map<string, instances>;
+    private occupiedInstances: Map<string, instances> = new Map()
 
 
     private client: Client = new Client({ partials: ["MESSAGE", "REACTION"] });

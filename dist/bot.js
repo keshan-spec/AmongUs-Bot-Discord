@@ -6,7 +6,7 @@ class DiscordBot {
     constructor() {
         this.PREFIX = "au";
         this.invite = "https://discord.com/api/oauth2/authorize?client_id=770288825091620864&permissions=8&scope=bot";
-        this.occupiedInstances = new Map(); // Map<string, instances>;
+        this.occupiedInstances = new Map();
         this.client = new discord_js_1.Client({ partials: ["MESSAGE", "REACTION"] });
         this.initializeCient();
     }
