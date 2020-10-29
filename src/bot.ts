@@ -2,7 +2,7 @@ import { Client, Message, VoiceChannel, MessageEmbed } from 'discord.js';
 import { type } from 'os';
 
 type instances = {
-    boundchannel?: VoiceChannel | null,
+    boundchannel: VoiceChannel,
     begin?: boolean,
     deadPlayers: string[]
 }
@@ -11,7 +11,7 @@ export class DiscordBot {
     private static instance: DiscordBot;
     private PREFIX = "au";
     private invite = "https://discord.com/api/oauth2/authorize?client_id=770288825091620864&permissions=8&scope=bot";
-    private occupiedInstances = new Map() // Map<string, instances>;
+    private occupiedInstances: Map<string, instances> = new Map() // Map<string, instances>;
 
 
     private client: Client = new Client({ partials: ["MESSAGE", "REACTION"] });
@@ -40,7 +40,7 @@ export class DiscordBot {
 
         this.setReadyHandler();
         this.setMessageHandler();
-        this.setVoiceHandler();
+        // this.setVoiceHandler();
     }
 
     private setReadyHandler(): void {
@@ -56,7 +56,7 @@ export class DiscordBot {
     private getChannelBound(voice_id: string): boolean { // check if a channel is already occupied
         var temp = true
         this.occupiedInstances.forEach((v, k) => {
-            if (v.boundchannel.id === voice_id) {
+            if (v.boundchannel?.id === voice_id) {
                 temp = false
             }
         })
@@ -192,12 +192,13 @@ export class DiscordBot {
         });
     }
 
-    private setVoiceHandler(): void {
-        this.client.on("voiceStateUpdate", (oldVoiceState, newVoiceState) => { // Listeing to the voiceStateUpdate event
-            if (newVoiceState.channel?.id) // The member connected to a channel.
-                console.log(`${newVoiceState.member?.user.tag} connected to ${newVoiceState.channel?.name}.`);
-            else if (oldVoiceState.channel?.id)  // The member disconnected from a channel.
-                console.log(`${oldVoiceState.member?.user.tag} disconnected from ${oldVoiceState.channel?.name}.`)
-        });
-    }
+    // NOT REQUIRED FOR NOW
+    // private setVoiceHandler(): void {
+    //     this.client.on("voiceStateUpdate", (oldVoiceState, newVoiceState) => { // Listeing to the voiceStateUpdate event
+    //         if (newVoiceState.channel?.id) // The member connected to a channel.
+    //             console.log(`${newVoiceState.member?.user.tag} connected to ${newVoiceState.channel?.name}.`);
+    //         else if (oldVoiceState.channel?.id)  // The member disconnected from a channel.
+    //             console.log(`${oldVoiceState.member?.user.tag} disconnected from ${oldVoiceState.channel?.name}.`)
+    //     });
+    // }
 }

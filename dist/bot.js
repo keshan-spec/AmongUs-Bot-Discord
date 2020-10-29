@@ -27,7 +27,7 @@ class DiscordBot {
             return;
         this.setReadyHandler();
         this.setMessageHandler();
-        this.setVoiceHandler();
+        // this.setVoiceHandler();
     }
     setReadyHandler() {
         this.client.on('ready', () => {
@@ -40,7 +40,8 @@ class DiscordBot {
     getChannelBound(voice_id) {
         var temp = true;
         this.occupiedInstances.forEach((v, k) => {
-            if (v.boundchannel.id === voice_id) {
+            var _a;
+            if (((_a = v.boundchannel) === null || _a === void 0 ? void 0 : _a.id) === voice_id) {
                 temp = false;
             }
         });
@@ -163,15 +164,6 @@ class DiscordBot {
                 return;
             if (message.content.startsWith(this.PREFIX))
                 this.commandHandler(message);
-        });
-    }
-    setVoiceHandler() {
-        this.client.on("voiceStateUpdate", (oldVoiceState, newVoiceState) => {
-            var _a, _b, _c, _d, _e, _f;
-            if ((_a = newVoiceState.channel) === null || _a === void 0 ? void 0 : _a.id)
-                console.log(`${(_b = newVoiceState.member) === null || _b === void 0 ? void 0 : _b.user.tag} connected to ${(_c = newVoiceState.channel) === null || _c === void 0 ? void 0 : _c.name}.`);
-            else if ((_d = oldVoiceState.channel) === null || _d === void 0 ? void 0 : _d.id)
-                console.log(`${(_e = oldVoiceState.member) === null || _e === void 0 ? void 0 : _e.user.tag} disconnected from ${(_f = oldVoiceState.channel) === null || _f === void 0 ? void 0 : _f.name}.`);
         });
     }
 }
